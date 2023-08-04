@@ -1,12 +1,12 @@
-from service.encryption import Encrypt
+from service.EncryptService import EncryptService
 import logging.config
 
 logging.config.fileConfig("logger.conf")
 
-secret = "secret key"
+secret = "secret key" # 16 bytes
 
-# Encrypt.getInstance.encrypt_file("file", secret)
+encryptService = EncryptService.get_instance()
 
-encryptService = Encrypt.get_instance()
+encrypted, iv = encryptService.encrypt_file("file", secret)
 
-encryptService.encrypt_file("file", secret)
+decrypted = encryptService.decrypt_file(encrypted, secret, iv)
