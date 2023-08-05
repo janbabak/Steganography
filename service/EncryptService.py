@@ -1,6 +1,6 @@
+import os
 import logging
 from Crypto.Cipher import AES
-import os
 
 class EncryptService:
     SECRET_LENGTH = 16
@@ -44,7 +44,7 @@ class EncryptService:
         """
         secret = self._format_secret(secret)
         initVector = self._create_init_vector()
-        self._logger.info(f"Init vector={initVector}")
+        self._log.info(f"Init vector={initVector}")
         
         cipher = AES.new(secret, blockMode, initVector)
         
@@ -71,7 +71,7 @@ class EncryptService:
         inputFile.close()
         outputFile.close()
         
-        self._logger.info(f"🔐 File \"{inputFilePath}\" was encrypted.")
+        self._log.info(f"🔐 File \"{inputFilePath}\" was encrypted.")
         
     
     def decrypt_file(self, inputFilePath, outputFilePath, secret, blockMode=AES.MODE_CBC):
@@ -109,7 +109,7 @@ class EncryptService:
         inputFile.close()
         outputFile.close()
             
-        self._logger.info(f"🔓 File {inputFilePath} was decrypted")
+        self._log.info(f"🔓 File {inputFilePath} was decrypted")
 
             
     def save_header(self, inputFilePath, outputFilePath, initVector):
@@ -125,7 +125,7 @@ class EncryptService:
         outputFile.write(inputFileSize.to_bytes(self.FILE_SIZE_LENGTH, "big"))
         outputFile.write(initVector)
         
-        self._logger.info(f"👦 Saved header - fileSize={inputFileSize}, initVector={initVector}")
+        self._log.info(f"👦 Saved header - fileSize={inputFileSize}, initVector={initVector}")
         
         
     def read_header(self, inputFilePath):
@@ -141,7 +141,7 @@ class EncryptService:
         fileSize = int.from_bytes(inputFile.read(self.FILE_SIZE_LENGTH), 'big')
         initVector = inputFile.read(self.INIT_VECTOR_LENGTH)
         
-        self._logger.info(f"👦 Read header - fileSize={fileSize}, initVector={initVector}")
+        self._log.info(f"👦 Read header - fileSize={fileSize}, initVector={initVector}")
 
         return fileSize, initVector, inputFile
 
@@ -169,5 +169,4 @@ class EncryptService:
         Returns:
             (bytes): init vector
         """
-        return os.urandom(length)
         return os.urandom(length)
