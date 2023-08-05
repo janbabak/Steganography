@@ -8,7 +8,7 @@ class EncryptService:
     INIT_VECTOR_LENGTH = 16
     
     _instance = None
-    _logger = logging.getLogger("EncryptService")
+    _log = logging.getLogger("EncryptService")
 
 
     @classmethod
@@ -39,29 +39,29 @@ class EncryptService:
             secret (string): secret key, length must be 16 bytes, when shorter key used,
             pad by spaces, when longer is used, cut the remaining characters
         """
-        self._logger.info("🔐 The file is being encrypted")
+        self._log.info("🔐 The file is being encrypted")
 
         init_vector = self._create_init_vector()
-        self._logger.info(f"Init vector={init_vector}")
+        self._log.info(f"Init vector={init_vector}")
         
         data = self._get_file_content(file)
         secret = self._format_secret(secret)
         cipher = AES.new(secret, AES.MODE_CBC, init_vector)
         
         encrypted_data = cipher.encrypt(data)
-        self._logger.info(f"encrypted_data={encrypted_data}")
+        self._log.info(f"encrypted_data={encrypted_data}")
         return encrypted_data, init_vector
     
     
     def decrypt_file(self, file, secret, iv):
-        self._logger.info("🔓 The file is being decrypted")
+        self._log.info("🔓 The file is being decrypted")
         
         encrypted_data = file        
         secret = self._format_secret(secret)
         cipher = AES.new(secret, AES.MODE_CBC, iv)
 
         plain_text = cipher.decrypt(encrypted_data)
-        self._logger.info(f"plain text={plain_text}")
+        self._log.info(f"plain text={plain_text}")
         return plain_text
 
 
