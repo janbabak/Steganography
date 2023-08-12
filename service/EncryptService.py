@@ -3,6 +3,10 @@ import logging
 from Crypto.Cipher import AES
 
 class EncryptService:
+    """Responsible for encrypting and decryption files using AES cipher.
+    Singleton pattern.
+    """
+    
     SECRET_LENGTH = 16
     INIT_VECTOR_LENGTH = 16
     FILE_SIZE_LENGTH = 4 # number of bytes used for storing original file size
@@ -37,8 +41,8 @@ class EncryptService:
         """Encrypt file chunk by chunk
 
         Args:
-            inputFilePath (string): path to input file
-            outputFilePath (string): path to output file
+            inputFilePath (string): path to the input file
+            outputFilePath (string): path to the output file
             secret (string): secret key used for encryption and decryption
             blockMode (number, optional): Block cipher mode. Defaults to AES.MODE_CBC.
         """
@@ -78,8 +82,8 @@ class EncryptService:
         """Decrypt file chunk by chunk
 
         Args:
-            inputFilePath (string): path to input file
-            outputFilePath (string): path to output file
+            inputFilePath (string): path to the input file
+            outputFilePath (string): path to the output file
             secret (string): secret key used for encryption and decryption
             blockMode (number, optional): Block cipher mode.. Defaults to AES.MODE_CBC.
         """
@@ -116,8 +120,8 @@ class EncryptService:
         """Save header containing metadata (file size, init vector) to output file
 
         Args:
-            inputFilePath (string): path to input file
-            outputFilePath (string): path to output file
+            inputFilePath (string): path to the input file
+            outputFilePath (string): path to the output file
             initVector (bytes): init vector
         """
         outputFile = open(outputFilePath, "wb")
@@ -132,7 +136,7 @@ class EncryptService:
         """Read header of encrypted file containing decrypted file size and init vector
 
         Args:
-            inputFilePath (string): path to input file
+            inputFilePath (string): path to the input file
 
         Returns:
             (number, bytes, file): file size, init vector, input file descriptor
