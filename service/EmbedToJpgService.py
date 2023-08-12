@@ -35,7 +35,7 @@ class EmbedToJpgService(EmbedToFileService):
         Args:
             inputFilePath (string): path to the input file
             outputFilePath (string): path to the output file
-            generator (AbstractGenerator): class responsible for generating data to embed
+            generator (generator): generates data to embed
 
         Raises:
             RuntimeError: when input file header is corrupted
@@ -60,11 +60,9 @@ class EmbedToJpgService(EmbedToFileService):
                 return
             
             try:
-                outputByte = self.createOutputByte(previousByte, next(generator.generator))
-                print(outputByte)
+                outputByte = self.embed_bit_into_bite(previousByte, next(generator))
                 outputFile.write(outputByte)
-            except:
-                # there is no more bits to embed
+            except StopIteration:
                 outputFile.write(previousByte)
                 outputFile.write(currentByte)
                 break
@@ -81,6 +79,8 @@ class EmbedToJpgService(EmbedToFileService):
             
         inputFile.close()
         outputFile.close()
+        
+        self._log.info("File saved")
             
         
         

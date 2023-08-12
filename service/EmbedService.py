@@ -27,7 +27,7 @@ class EmbedService:
         Args:
             inputFilePath (string): path to the input file
             outputFilePath (string): path to the output file
-            generator (AbstractGenerator): class responsible for generating data to embed
+            generator (generator): generates data to embed
         """
         _, fileExtension = os.path.splitext(inputFilePath)
         

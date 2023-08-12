@@ -15,7 +15,7 @@ class EmbedToFileService:
         Args:
             inputFilePath (string): path to the input file
             outputFilePath (string): path to the output file
-            generator (AbstractGenerator): class responsible for generating data to embed
+            generator (generator): generates data to embed
         
         Raises:
             RuntimeError
@@ -23,17 +23,16 @@ class EmbedToFileService:
         pass
         
         
-    def embedBitIntoBite(self, byte, bit):
+    def embed_bit_into_bite(self, byte, bit) -> bytes:
         """Embed bit into the leas significant bit of byte
 
         Args:
-            byte (_type_): _description_
-            bit (_type_): _description_
+            byte (bytes): byte in which bit is embedded
+            bit (int): bit embedded to bite
 
         Returns:
-            _type_: _description_
+            bytes: byte with the least significant bite equal to bit
         """
-        return byte & bit
-        # byteValue = int.from_bytes(byte, 'big')
-        # return (byteValue - bit).to_bytes(1, 'big')
+        byte = (byte[0] >> 1) << 1 # make the least significant bit 0
+        return (byte | bit).to_bytes(1, 'big') # 0 | 1 -> 1, 0 | 0 -> 0
     
