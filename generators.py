@@ -2,7 +2,7 @@ import logging
 
 DATA_SIZE_BYTES = 4
 
-log = logging.getLogger("Generator")
+log = logging.getLogger('Generator')
 
 def string_generator(message) -> int:
     """Generates bits from message starting from the leas significant bit.
@@ -14,7 +14,7 @@ def string_generator(message) -> int:
     Yields:
         int: bits
     """
-    log.info("generating string")
+    log.info('generating string')
     
     message = bytes(message, 'utf-8')
     size = len(message).to_bytes(DATA_SIZE_BYTES, 'big')

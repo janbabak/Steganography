@@ -9,7 +9,7 @@ class EmbedService:
     BITS_IN_BYTES = 8
     
     _instance = None
-    _log = logging.getLogger("EmbedService")
+    _log = logging.getLogger('EmbedService')
     
     
     @classmethod
@@ -33,7 +33,7 @@ class EmbedService:
             generator (generator): generates data to embed
         """
         inputImage = Image.open(inputFilePath)
-        outputImage = Image.new("RGB", inputImage.size)
+        outputImage = Image.new('RGB', inputImage.size)
         
         width, height = inputImage.size
         for y in range(height):
@@ -94,7 +94,7 @@ class EmbedService:
         hiddenBitsGenerator = hidden_bits_generator(inputImage)
         messageSize = self._read_message_size(hiddenBitsGenerator)
 
-        self._log.info(f"message size is {messageSize}")
+        self._log.info(f'message size is {messageSize}')
         
         message = ""
         
