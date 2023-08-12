@@ -3,13 +3,17 @@ import logging
 from Crypto.Cipher import AES
 
 class EncryptService:
+    """Responsible for encrypting and decryption files using AES cipher.
+    Singleton pattern.
+    """
+    
     SECRET_LENGTH = 16
     INIT_VECTOR_LENGTH = 16
     FILE_SIZE_LENGTH = 4 # number of bytes used for storing original file size
     CHUNK_SIZE = 16 # number of bytes being encrypted or decrypted
     
     _instance = None
-    _log = logging.getLogger("EncryptService")
+    _log = logging.getLogger('EncryptService')
 
 
     @classmethod
@@ -37,14 +41,14 @@ class EncryptService:
         """Encrypt file chunk by chunk
 
         Args:
-            inputFilePath (string): path to input file
-            outputFilePath (string): path to output file
+            inputFilePath (string): path to the input file
+            outputFilePath (string): path to the output file
             secret (string): secret key used for encryption and decryption
             blockMode (number, optional): Block cipher mode. Defaults to AES.MODE_CBC.
         """
         secret = self._format_secret(secret)
         initVector = self._create_init_vector()
-        self._log.info(f"Init vector={initVector}")
+        self._log.info(f'Init vector={initVector}')
         
         cipher = AES.new(secret, blockMode, initVector)
         
@@ -63,7 +67,7 @@ class EncryptService:
             # if input bytes aren't aligned to CHUNK_SIZE, add padding of spaces
             if len(inputBytes) < self.CHUNK_SIZE:
                 paddingLength = self.CHUNK_SIZE - len(inputBytes)
-                inputBytes += bytes(" " * paddingLength, "utf-8")
+                inputBytes += bytes(" " * paddingLength, 'utf-8')
                 
             outputBytes = cipher.encrypt(inputBytes)
             outputFile.write(outputBytes)
@@ -71,15 +75,15 @@ class EncryptService:
         inputFile.close()
         outputFile.close()
         
-        self._log.info(f"🔐 File \"{inputFilePath}\" was encrypted.")
+        self._log.info(f'🔐 File \"{inputFilePath}\" was encrypted.')
         
     
     def decrypt_file(self, inputFilePath, outputFilePath, secret, blockMode=AES.MODE_CBC):
         """Decrypt file chunk by chunk
 
         Args:
-            inputFilePath (string): path to input file
-            outputFilePath (string): path to output file
+            inputFilePath (string): path to the input file
+            outputFilePath (string): path to the output file
             secret (string): secret key used for encryption and decryption
             blockMode (number, optional): Block cipher mode.. Defaults to AES.MODE_CBC.
         """
@@ -88,7 +92,7 @@ class EncryptService:
 
         secret = self._format_secret(secret)
         cipher = AES.new(secret, blockMode, initVector)
-        outputFile = open(outputFilePath, "wb")
+        outputFile = open(outputFilePath, 'wb')
         inputBytes = True
 
         while inputBytes:
@@ -109,39 +113,39 @@ class EncryptService:
         inputFile.close()
         outputFile.close()
             
-        self._log.info(f"🔓 File {inputFilePath} was decrypted")
+        self._log.info(f'🔓 File {inputFilePath} was decrypted')
 
             
     def save_header(self, inputFilePath, outputFilePath, initVector):
         """Save header containing metadata (file size, init vector) to output file
 
         Args:
-            inputFilePath (string): path to input file
-            outputFilePath (string): path to output file
+            inputFilePath (string): path to the input file
+            outputFilePath (string): path to the output file
             initVector (bytes): init vector
         """
-        outputFile = open(outputFilePath, "wb")
+        outputFile = open(outputFilePath, 'wb')
         inputFileSize = os.path.getsize(inputFilePath)
-        outputFile.write(inputFileSize.to_bytes(self.FILE_SIZE_LENGTH, "big"))
+        outputFile.write(inputFileSize.to_bytes(self.FILE_SIZE_LENGTH, 'big'))
         outputFile.write(initVector)
         
-        self._log.info(f"👦 Saved header - fileSize={inputFileSize}, initVector={initVector}")
+        self._log.info(f'👦 Saved header - fileSize={inputFileSize}, initVector={initVector}')
         
         
     def read_header(self, inputFilePath):
         """Read header of encrypted file containing decrypted file size and init vector
 
         Args:
-            inputFilePath (string): path to input file
+            inputFilePath (string): path to the input file
 
         Returns:
             (number, bytes, file): file size, init vector, input file descriptor
         """
-        inputFile = open(inputFilePath, "rb")
+        inputFile = open(inputFilePath, 'rb')
         fileSize = int.from_bytes(inputFile.read(self.FILE_SIZE_LENGTH), 'big')
         initVector = inputFile.read(self.INIT_VECTOR_LENGTH)
         
-        self._log.info(f"👦 Read header - fileSize={fileSize}, initVector={initVector}")
+        self._log.info(f'👦 Read header - fileSize={fileSize}, initVector={initVector}')
 
         return fileSize, initVector, inputFile
 
