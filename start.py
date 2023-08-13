@@ -1,5 +1,6 @@
 import logging.config
 from service.EmbedService import EmbedService
+from service.EncryptService import EncryptService
 from generators import string_generator
 
 
@@ -17,3 +18,12 @@ embedService.embed_bytes('images/leafs.jpg', 'images/output.png', generator)
 message = embedService.get_embedded_message('images/output.png')
 
 logging.info(f'hidden message is: {message}')
+
+encryptService = EncryptService.get_instance()
+
+encrypted = encryptService.encrypt_string("What have you been up to?", "12345")
+
+
+plainText = encryptService.decrypt_string(encrypted, "12345")
+
+print(plainText)

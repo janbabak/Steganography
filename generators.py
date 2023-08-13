@@ -1,10 +1,11 @@
 import logging
+from PIL import Image
 
 DATA_SIZE_BYTES = 4
 
 log = logging.getLogger('Generator')
 
-def string_generator(message) -> int:
+def string_generator(message: str) -> int:
     """Generates bits from message starting from the leas significant bit.
     Embeds size of message into first 4 bytes
 
@@ -24,7 +25,7 @@ def string_generator(message) -> int:
             yield (byte >> i) & 1
       
       
-def hidden_bits_generator(image):
+def hidden_bits_generator(image: Image.Image) -> int:
     """Generates hidden bites from image
 
     Args:

@@ -2,6 +2,7 @@ import os
 import logging
 from PIL import Image
 from generators import *
+from typing import Generator
 
 
 class EmbedService:
@@ -24,7 +25,7 @@ class EmbedService:
         return cls._instance
     
     
-    def embed_bytes(self, inputFilePath, outputFilePath, generator) -> None:
+    def embed_bytes(self, inputFilePath: str, outputFilePath: str, generator: Generator[int, str, None]) -> None:
         """Embed bytes from generator to the input file
 
         Args:
@@ -44,7 +45,7 @@ class EmbedService:
         outputImage.save(outputFilePath,  quality=100, subsampling=0)
 
 
-    def _embed_bites_into_pixel(self, pixel, generator) -> (int, int, int):
+    def _embed_bites_into_pixel(self, pixel: tuple[int, int, int], generator: Generator[int, str, None]) -> (int, int, int):
         """Embed bites into pixel
 
         Args:
@@ -61,7 +62,7 @@ class EmbedService:
         )
         
              
-    def _embed_bit_into_number(self, number, generator) -> int:
+    def _embed_bit_into_number(self, number: int, generator: Generator[int, str, None]) -> int:
         """Embed bit to the leas significant bit of the number
 
         Args:
@@ -80,7 +81,7 @@ class EmbedService:
             return number
         
         
-    def get_embedded_message(self, inputFilePath) -> str:
+    def get_embedded_message(self, inputFilePath: str) -> str:
         """Read embedded message from file
 
         Args:
@@ -109,8 +110,7 @@ class EmbedService:
         return message
                 
                 
-                
-    def _read_message_size(self, generator) -> int:
+    def _read_message_size(self, generator: Generator[int, str, None]) -> int:
         """Read size of embedded data (in bytes) from generator
 
         Args:
