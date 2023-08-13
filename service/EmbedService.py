@@ -97,7 +97,7 @@ class EmbedService:
 
         self._log.info(f'message size is {messageSize}')
         
-        message = ""
+        message = bytes('', 'utf-8')
         
         for i in range(messageSize):
             charNumber = 0
@@ -105,7 +105,7 @@ class EmbedService:
             for j in range(self.BITS_IN_BYTES):
                 charNumber += (next(hiddenBitsGenerator) << j)
                 
-            message += chr(charNumber)
+            message += charNumber.to_bytes(1, 'big')
             
         return message
                 

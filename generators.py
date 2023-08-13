@@ -18,9 +18,24 @@ def string_generator(message: str) -> int:
     log.info('generating string')
     
     message = bytes(message, 'utf-8')
-    size = len(message).to_bytes(DATA_SIZE_BYTES, 'big')
+    return bytes_generator(message)
+            
+            
+def bytes_generator(data: bytes) -> int:
+    """Generates bits from data starting from the leas significant bit.
+    Embeds size of data into first 4 bytes
 
-    for byte in size + message:
+    Args:
+        data (bytes): message
+
+    Yields:
+        int: bits
+    """
+    log.info('generating bytes')
+    
+    size = len(data).to_bytes(DATA_SIZE_BYTES, 'big')
+
+    for byte in size + data:
         for i in range(8):
             yield (byte >> i) & 1
       
