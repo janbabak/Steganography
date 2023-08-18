@@ -1,8 +1,8 @@
-import os
 import logging
 from PIL import Image
 from generators import *
 from typing import Generator
+from service.EncryptService import EncryptService
 
 
 class EmbedService:
@@ -11,6 +11,7 @@ class EmbedService:
     
     _instance = None
     _log = logging.getLogger('EmbedService')
+    _encryptService = EncryptService.get_instance()
     
     
     @classmethod
@@ -25,13 +26,34 @@ class EmbedService:
         return cls._instance
     
     
-    def embed_bytes(self, inputFilePath: str, outputFilePath: str, generator: Generator[int, str, None]) -> None:
+    def embed_file(self, pathToFileToEmbed: str, pathToInputImage: str, pathToOutputImage: str) -> None:
+        """Embed file into another file.
+
+        Args:
+            pathToInputImage (str): path to the input file - message is be embedded into this file
+            pathToOutputImage (str): path to the output file - file with embedded message inside
+            pathToFileToEmbed (str): path to the file that you want to embed/hide
+        """
+        # TODO: size check
+        generator = file_generator(pathToFileToEmbed)
+        self._embed_bytes(pathToInputImage, pathToOutputImage, generator)
+        
+        
+    def embed_string(self, plainText: str, pathToInputImage: str, pathToOutputImage: str, secret: str = '') -> None:
+        # TODO: size check
+        # encryptedMessage = self._encryptService.encrypt_string(plainText, secret)
+        # generator = bytes_generator(encryptedMessage)
+        generator = string_generator(plainText)
+        self._embed_bytes(pathToInputImage, pathToOutputImage, generator)
+    
+    
+    def _embed_bytes(self, inputFilePath: str, outputFilePath: str, generator: Generator[int, int, None]) -> None:
         """Embed bytes from generator to the input file
 
         Args:
             inputFilePath (string): path to the input file
             outputFilePath (string): path to the output file
-            generator (generator): generates data to embed
+            generator (Generator[int, int, None]): generates data to embed
         """
         inputImage = Image.open(inputFilePath)
         outputImage = Image.new('RGB', inputImage.size)
@@ -50,7 +72,7 @@ class EmbedService:
 
         Args:
             pixel ((int, int, int)): pixel of RGB channels
-            generator (generator): generates the data to embed
+            generator (Generator[int, int, None]): generates the data to embed
 
         Returns:
             (int, int, int): pixel of RGB channels 
@@ -62,71 +84,118 @@ class EmbedService:
         )
         
              
-    def _embed_bit_into_number(self, number: int, generator: Generator[int, str, None]) -> int:
+    def _embed_bit_into_number(self, number: int, generator: Generator[int, int, None]) -> int:
         """Embed bit to the leas significant bit of the number
 
         Args:
             number (int): bit is embedded to this number
-            generator (generator): generates the data to embed
+            generator (Generator[int, int, None]): generates the data to embed
 
         Returns:
             int: _description_
         """
         try:
             bit = next(generator)
-            # self._log.info(f" embedding: {bit}")
             number = (number >> 1) << 1
             return number | bit
         except StopIteration:
             return number
         
         
-    def get_embedded_message(self, inputFilePath: str) -> str:
-        """Read embedded message from file
+    def get_embedded_message(self, inputFilePath: str, outputFilePath: str = '', secret: str = '') -> None:
+        """Read embedded message from file and save it to file (if it's file) or display it (if it's string)
 
         Args:
             inputFilePath (string): path to the input file containing embedded message
-
-        Returns:
-            string: message
+            outputFilePath (string): path to the output file if the message's content type is file
         """
         inputImage = Image.open(inputFilePath)
-        width, height = inputImage.size
         hiddenBitsGenerator = hidden_bits_generator(inputImage)
-        messageSize = self._read_message_size(hiddenBitsGenerator)
+        messageSize, contentType = self._read_message_metadata(hiddenBitsGenerator)
 
-        self._log.info(f'message size is {messageSize}')
+        self._log.info(f' get embedded message - size: {messageSize}, contentType: {contentType}')
         
-        message = bytes('', 'utf-8')
-        
-        for i in range(messageSize):
-            charNumber = 0
+        if contentType == ContentType.STRING:
+            self._show_embedded_message(messageSize, hiddenBitsGenerator, secret)
+        elif contentType == ContentType.FILE:
+            self._save_embedded_file(outputFilePath, messageSize, hiddenBitsGenerator)
+        else:
+            self._log.error(f'unknown message content: {contentType}')
             
-            for j in range(self.BITS_IN_BYTES):
-                charNumber += (next(hiddenBitsGenerator) << j)
-                
+            
+    def _save_embedded_file(self, outputFilePath: str, fileSize: int, generator: Generator[int, int, None]) -> None:
+        """Save file that was embedded into image.
+
+        Args:
+            outputFilePath (str): path to the output file
+            messageSize (int): message size in bytes
+            generator (Generator[int, int, None]): hidden bits generator
+        """
+        outputFile = open(outputFilePath, 'wb')
+        for _ in range(fileSize):
+            byte = 0
+            for i in range(self.BITS_IN_BYTES):
+                byte += (next(generator) << i)
+            byte = byte.to_bytes(1, 'big')
+            outputFile.write(byte)
+        outputFile.close()
+        self._log.info(f'embedded file saved to as {outputFilePath}')
+    
+    
+    def _show_embedded_message(self, messageSize: int, generator: Generator[int, int, None], secret: str) -> None:
+        """Show embedded message.
+
+        Args:
+            messageSize (int): message size in bytes
+            generator (Generator[int, int, None]): hidden bit generator
+        """
+        message = bytes('', 'utf-8')
+        for _ in range(messageSize):
+            charNumber = 0
+            for i in range(self.BITS_IN_BYTES):
+                charNumber += (next(generator) << i)
             message += charNumber.to_bytes(1, 'big')
             
-        return message
+        # message = self._encryptService.decrypt_string(message, secret)
+        
+        message = message.decode('utf-8')
+
+        self._log.info(f'message is: {message}')
                 
                 
-    def _read_message_size(self, generator: Generator[int, str, None]) -> int:
-        """Read size of embedded data (in bytes) from generator
+    def _read_message_metadata(self, generator: Generator[int, int, None]) -> [int, ContentType]:
+        """Read metadata (size, content type) of embedded data (in bytes) from generator
 
         Args:
             generator (generator): embedded data generator
 
         Returns:
-            int: embedded data size
+            [int, ContentType]: embedded data size, content type 
         """
-        size = 0
+        size = self._get_integer(DATA_SIZE_BYTES, generator)
+        contentType = ContentType(self._get_integer(MESSAGE_CONTENT_SIZE, generator))
+            
+        return size, contentType
+    
+    
+    def _get_integer(self, numberOfBytes, generator: Generator[int, int, None]) -> int:
+        """Get integer, that spans over `numberOfBytes`
+
+        Args:
+            numberOfBytes (int): number of bytes used to store the integer
+            generator (Generator[int, int, None]): generates the bytes
+
+        Returns:
+            int: number stored in bytes
+        """
+        number = 0
         
-        for i in range(DATA_SIZE_BYTES):
+        for i in range(numberOfBytes):
             byte = 0
             for j in range(self.BITS_IN_BYTES):
                 bit = next(generator) << j
                 byte += bit
             
-            size += byte * 2**(self.BITS_IN_BYTES * (DATA_SIZE_BYTES - (i + 1)))
+            number += byte * 2**(self.BITS_IN_BYTES * (numberOfBytes - (i + 1)))
             
-        return size
+        return number
