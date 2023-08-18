@@ -1,9 +1,5 @@
 import logging.config
 from service.EmbedService import EmbedService
-from service.EncryptService import EncryptService
-from generators import bytes_generator
-from generators import string_generator
-
 
 logging.config.fileConfig('logger.conf')
 pil_logger = logging.getLogger('PIL')
@@ -11,19 +7,15 @@ pil_logger.setLevel(logging.INFO)
 
 
 embedService = EmbedService.get_instance()
-encryptService = EncryptService.get_instance()
 
-message = 'What have you been up to?'
-inputFilePath = 'images/leafs.jpg'
+# message = 'What have you been up to?'
+inputFilePath = 'images/christmas.jpg'
 outputFilePath = 'images/output.png'
-secret = '095klljmlkfj90dsf90sdf0s'
 
-encrypted = encryptService.encrypt_string(message, secret)
-generator = bytes_generator(encrypted)
-embedService.embed_bytes(inputFilePath, outputFilePath, generator)
-retrievedMessage = embedService.get_embedded_message(outputFilePath)
-plainText = encryptService.decrypt_string(retrievedMessage, secret)
+# embed string
+embedService.embed_string("cau pico.", inputFilePath, outputFilePath)
+embedService.get_embedded_message(outputFilePath)
 
-logging.info(f'hidden message is: {plainText}')
-
-assert(message == plainText)
+# embed image
+# embedService.embed_file('images/leafs.jpg', inputFilePath, outputFilePath)
+# embedService.get_embedded_message(outputFilePath, 'images/message.png')
