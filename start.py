@@ -6,6 +6,7 @@ pil_logger = logging.getLogger('PIL')
 pil_logger.setLevel(logging.INFO)
 
 
+secret = '05jlkfsdsadffa90fsds'
 embedService = EmbedService.get_instance()
 
 # message = 'What have you been up to?'
@@ -17,5 +18,5 @@ embedService.embed_string("cau pico.", inputFilePath, outputFilePath)
 embedService.get_embedded_message(outputFilePath)
 
 # embed image
-# embedService.embed_file('images/leafs.jpg', inputFilePath, outputFilePath)
-# embedService.get_embedded_message(outputFilePath, 'images/message.png')
+# embedService.embed_file('images/leafs.jpg', inputFilePath, outputFilePath, secret)
+# embedService.get_embedded_message(outputFilePath, 'images/message.png', secret)
