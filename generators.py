@@ -8,6 +8,7 @@ MESSAGE_CONTENT_SIZE = 1 # how many bytes is used to encode ContentType enum val
 
 log = logging.getLogger('Generator')
 
+
 def string_generator(message: str) -> int:
     """Generates bits from message starting from the least significant bit.
     Embeds size of message into first 4 bytes
@@ -39,7 +40,6 @@ def bytes_generator(data: bytes, contentType: ContentType) -> int:
     
     size = len(data)
     sizeByte = size.to_bytes(DATA_SIZE_BYTES, 'big')
-    contentType = ContentType.STRING
     contentTypeByte = contentType.value.to_bytes(MESSAGE_CONTENT_SIZE, 'big')
     
     log.info(f'message size: {size}, message content {contentType}')

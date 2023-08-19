@@ -26,24 +26,27 @@ class EmbedService:
         return cls._instance
     
     
-    def embed_file(self, pathToFileToEmbed: str, pathToInputImage: str, pathToOutputImage: str) -> None:
+    def embed_file(self, pathToFileToEmbed: str, pathToInputImage: str, pathToOutputImage: str, secret: str = '') -> None:
         """Embed file into another file.
 
         Args:
             pathToInputImage (str): path to the input file - message is be embedded into this file
             pathToOutputImage (str): path to the output file - file with embedded message inside
             pathToFileToEmbed (str): path to the file that you want to embed/hide
+            secret (str): secret password for encryption
         """
         # TODO: size check
-        generator = file_generator(pathToFileToEmbed)
+        encryptedFileName = pathToFileToEmbed + '.encrypted'
+        self._encryptService.encrypt_file(pathToFileToEmbed, encryptedFileName, secret)
+        generator = file_generator(encryptedFileName)
         self._embed_bytes(pathToInputImage, pathToOutputImage, generator)
+        os.remove(encryptedFileName) # remove encrypted file for fs
         
         
     def embed_string(self, plainText: str, pathToInputImage: str, pathToOutputImage: str, secret: str = '') -> None:
         # TODO: size check
-        # encryptedMessage = self._encryptService.encrypt_string(plainText, secret)
-        # generator = bytes_generator(encryptedMessage)
-        generator = string_generator(plainText)
+        encryptedMessage = self._encryptService.encrypt_string(plainText, secret)
+        generator = bytes_generator(encryptedMessage, ContentType.STRING)
         self._embed_bytes(pathToInputImage, pathToOutputImage, generator)
     
     
@@ -116,50 +119,55 @@ class EmbedService:
         self._log.info(f' get embedded message - size: {messageSize}, contentType: {contentType}')
         
         if contentType == ContentType.STRING:
-            self._show_embedded_message(messageSize, hiddenBitsGenerator, secret)
+            self._show_embedded_message(messageSize, secret, hiddenBitsGenerator)
         elif contentType == ContentType.FILE:
-            self._save_embedded_file(outputFilePath, messageSize, hiddenBitsGenerator)
+            self._save_embedded_file(outputFilePath, messageSize, secret, hiddenBitsGenerator)
         else:
             self._log.error(f'unknown message content: {contentType}')
             
             
-    def _save_embedded_file(self, outputFilePath: str, fileSize: int, generator: Generator[int, int, None]) -> None:
-        """Save file that was embedded into image.
+    def _save_embedded_file(self, outputFilePath: str, fileSize: int, secret: str, generator: Generator[int, int, None]) -> None:
+        """Save and decrypt file that was embedded into image.
 
         Args:
             outputFilePath (str): path to the output file
             messageSize (int): message size in bytes
+            secret (str): secret password for decryption
             generator (Generator[int, int, None]): hidden bits generator
         """
-        outputFile = open(outputFilePath, 'wb')
+        encryptedFileName = outputFilePath + '.encrypted'
+        encryptedFile = open(encryptedFileName, 'wb')
         for _ in range(fileSize):
             byte = 0
             for i in range(self.BITS_IN_BYTES):
                 byte += (next(generator) << i)
             byte = byte.to_bytes(1, 'big')
-            outputFile.write(byte)
-        outputFile.close()
+            encryptedFile.write(byte)
+        encryptedFile.close()
+        
+        self._encryptService.decrypt_file(encryptedFileName, outputFilePath, secret)
+        os.remove(encryptedFileName) # remove encrypted file from fs
+        
         self._log.info(f'embedded file saved to as {outputFilePath}')
     
     
-    def _show_embedded_message(self, messageSize: int, generator: Generator[int, int, None], secret: str) -> None:
+    def _show_embedded_message(self, messageSize: int, secret: str, generator: Generator[int, int, None]) -> None:
         """Show embedded message.
 
         Args:
             messageSize (int): message size in bytes
+            secret (str): secret password for decryption
             generator (Generator[int, int, None]): hidden bit generator
         """
-        message = bytes('', 'utf-8')
+        message = bytes()
         for _ in range(messageSize):
-            charNumber = 0
+            byte = 0
             for i in range(self.BITS_IN_BYTES):
-                charNumber += (next(generator) << i)
-            message += charNumber.to_bytes(1, 'big')
+                byte += (next(generator) << i)
+            message += byte.to_bytes(1, 'big')
             
-        # message = self._encryptService.decrypt_string(message, secret)
+        message = self._encryptService.decrypt_string(message, secret)
         
-        message = message.decode('utf-8')
-
         self._log.info(f'message is: {message}')
                 
                 
