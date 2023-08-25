@@ -1,4 +1,5 @@
 import logging
+import os
 from PIL import Image
 from generators import *
 from typing import Generator
@@ -30,12 +31,15 @@ class EmbedService:
         """Embed file into another file.
 
         Args:
-            pathToInputImage (str): path to the input file - message is be embedded into this file
+            pathToInputImage (str): path to the input file - message will be embedded into this file
             pathToOutputImage (str): path to the output file - file with embedded message inside
             pathToFileToEmbed (str): path to the file that you want to embed/hide
-            secret (str): secret password for encryption
+            secret (str, optional): secret password for encryption. Defaults to ''.
         """
-        # TODO: size check
+        if not self._validate_size(pathToInputImage, pathToFileToEmbed=pathToFileToEmbed):
+            self._log.error('🚨 input image is to small, embedded content can\'t fit there')
+            return
+        
         encryptedFileName = pathToFileToEmbed + '.encrypted'
         self._encryptService.encrypt_file(pathToFileToEmbed, encryptedFileName, secret)
         generator = file_generator(encryptedFileName)
@@ -44,11 +48,62 @@ class EmbedService:
         
         
     def embed_string(self, plainText: str, pathToInputImage: str, pathToOutputImage: str, secret: str = '') -> None:
-        # TODO: size check
+        """Embed string into another file.
+
+        Args:
+            plainText (str): string to embed
+            pathToInputImage (str): path to the input file - message will be embedded into this file
+            pathToOutputImage (str): path to the output file - file with embedded message inside
+            secret (str, optional): secret password for encryption. Defaults to ''.
+        """
+        if not self._validate_size(pathToInputImage, plainText=plainText):
+            self._log.error('🚨 input image is to small, embedded content can\'t fit there')
+            return
+        
         encryptedMessage = self._encryptService.encrypt_string(plainText, secret)
         generator = bytes_generator(encryptedMessage, ContentType.STRING)
         self._embed_bytes(pathToInputImage, pathToOutputImage, generator)
+        
     
+    def _validate_size(self, pathToInputImage: str, pathToFileToEmbed: str = None, plainText: str = None) -> bool:
+        """Validate if input image is big enough to fit in the embedded content.
+
+        Args:
+            pathToInputImage (str): path to the input image - message will be embedded into this file
+            pathToFileToEmbed (str, optional): path to the file to embed. Defaults to None.
+            plainText (str, optional): plain text to embed. Defaults to None.
+
+        Returns:
+            bool: _description_
+        """
+        numberOfBytesToEmbed = 0
+        
+        # number of row bytes to embed
+        if plainText:
+            numberOfBytesToEmbed = len(plainText)
+        elif pathToFileToEmbed:
+            numberOfBytesToEmbed = os.path.getsize(pathToFileToEmbed)
+        else:
+            return False
+
+        # number of bytes to embed after encryption
+        if numberOfBytesToEmbed % EncryptService.BLOCK_SIZE != 0:
+            numberOfBytesToEmbed = ((numberOfBytesToEmbed // EncryptService.BLOCK_SIZE) + 1) * EncryptService.BLOCK_SIZE
+
+        # add bytes containing metadata
+        numberOfBytesToEmbed += EncryptService.INIT_VECTOR_LENGTH
+        numberOfBytesToEmbed += EncryptService.SIZE_LENGTH
+        numberOfBytesToEmbed += MESSAGE_CONTENT_SIZE
+        numberOfBytesToEmbed += MESSAGE_CONTENT_SIZE
+        
+        width, height = Image.open(pathToInputImage).size
+        numberOfBytesOfInputImagePixels = width * height * 3 # 3 because of 3 color channels (R, G, B)
+        
+        # validation
+        numberOfBitsToEmbed = numberOfBytesToEmbed * self.BITS_IN_BYTES
+        self._log.info(f'number of bits to embed: {numberOfBitsToEmbed} to number of bytes of input image pixels {numberOfBytesOfInputImagePixels}')
+        return numberOfBytesOfInputImagePixels > numberOfBitsToEmbed # 1 bit is embedded into one byte of input image
+        
     
     def _embed_bytes(self, inputFilePath: str, outputFilePath: str, generator: Generator[int, int, None]) -> None:
         """Embed bytes from generator to the input file
