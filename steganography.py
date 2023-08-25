@@ -30,4 +30,3 @@ if args.embed:
         embedService.embed_file(args.file_content, args.input_file, args.output_file, args.password)
 elif args.extract:
     embedService.get_embedded_message(args.input_file, args.output_file, args.password)
-    
